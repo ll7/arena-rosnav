@@ -64,10 +64,10 @@ RUN echo 'eval "$(pyenv init --path)"' >> /root/.profile
 
 RUN mkdir -p /root/src/
 WORKDIR /root/src/
-RUN git clone https://github.com/Arena-Rosnav/arena-rosnav.git
+RUN git clone https://github.com/nautnatic/arena-rosnav.git
 WORKDIR /root/src/arena-rosnav
 RUN git checkout -l
-RUN git checkout v0.1.1
+RUN git checkout dev
 
 RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
 RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
