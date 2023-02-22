@@ -1,0 +1,13 @@
+services:
+  arena:
+    image: arena-original
+    container_name: arena-original
+    environment:
+      - DISPLAY
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      # to show GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+#    command: roslaunch arena_bringup start_arena.launch
+    # uncomment this to just start container and wait instead of launching simulation
+    command: tail -f /dev/null
