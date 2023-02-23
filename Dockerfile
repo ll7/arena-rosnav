@@ -44,7 +44,7 @@ RUN apt-get -y update \
     python3-tk \
     tk-dev \
     ros-noetic-lms1xx \
-    ros-noetic-velodyne-description \ 
+    ros-noetic-velodyne-description \
     ros-noetic-hector-gazebo \
     ros-noetic-ira-laser-tools
 
@@ -64,20 +64,36 @@ RUN echo 'eval "$(pyenv init --path)"' >> /root/.profile
 
 RUN mkdir -p /root/src/
 WORKDIR /root/src/
-RUN git clone https://github.com/nautnatic/arena-rosnav.git
-WORKDIR /root/src/arena-rosnav
-RUN git checkout -l
-RUN git checkout dev
+#RUN git clone https://github.com/nautnatic/arena-rosnav.git
+#WORKDIR /root/src/arena-rosnav
+#RUN git checkout -l
+COPY . arena-rosnav
 
-RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
-RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
-
+# Install ROS dependencies from .rosinstall
 WORKDIR /root/src/arena-rosnav
 RUN rosws update
 
+# Install poetry dependencies from poetry.lock
+WORKDIR /root/src/arena-rosnav
+RUN poetry install
+
+# Install pip dependencies from stable-baselines3
+WORKDIR /root/src/utils/stable-baselines3
+RUN pip install -e .
+
+# Integrate setup scripts in .bashrc for next shell login
+RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
+# RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
+
 WORKDIR /root/
-RUN source /root/.bashrc \
-    && source /opt/ros/noetic/setup.sh \
-    && catkin_make
+#RUN source /root/.bashrc &&\
+#    source /opt/ros/noetic/setup.sh
+#    && catkin_make
+
+# MANUAL STEPS (when debugging):
+# cd /root/src/arena-rosnav && poetry shell && poetry install
+# cd /root/src/utils/stable-baselines3 && pip install -e .
+# cd /root && catkin_make
+# source /root/devel/setup.sh
 
 # roslaunch arena_bringup start_arena.launch visualization:=none >> output.txt
