@@ -17,6 +17,8 @@ export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-arena-rosnav/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 export ARENA_NON_INTERACTIVE=${ARENA_NON_INTERACTIVE:-0}
+export ARENA_USE_LOCAL_REPO=${ARENA_USE_LOCAL_REPO:-0}
+export ARENA_FORCE_CLONE=${ARENA_FORCE_CLONE:-0}
 
 prompt_with_default(){
   local prompt="$1"
@@ -223,14 +225,20 @@ fi
 # == install arena on top of ros2 ==
 
 if [ ! -f "$INSTALLED" ] ; then
-  mv src/arena/arena-rosnav src/arena/.arena-rosnav
-
-  echo "cloning Arena-Rosnav..."
-  git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
-
-  mv -n src/arena/.arena-rosnav/* src/arena/.arena-rosnav/.* src/arena/arena-rosnav || true
-  rm -rf src/arena/.arena-rosnav
-
+  if [ -d src/arena/arena-rosnav/.git ] && [ "${ARENA_FORCE_CLONE}" != "1" ]; then
+    echo "Using existing arena-rosnav checkout (set ARENA_FORCE_CLONE=1 to re-clone)."
+  else
+    if [ "${ARENA_USE_LOCAL_REPO}" = "1" ] && [ -d src/arena/arena-rosnav ]; then
+      echo "ARENA_USE_LOCAL_REPO=1 set but repo not found with .git; using existing contents."
+    else
+      if [ -d src/arena/arena-rosnav ]; then
+        echo "Backing up existing arena-rosnav to src/arena/.arena-rosnav.bak"
+        mv src/arena/arena-rosnav src/arena/.arena-rosnav.bak
+      fi
+      echo "Cloning Arena-Rosnav..."
+      git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
+    fi
+  fi
 
   ln -fs src/arena/arena-rosnav/tools/source.bash ./arena.bash
   ln -fs src/arena/arena-rosnav/tools/poetry_install .
