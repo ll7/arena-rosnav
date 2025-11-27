@@ -13,6 +13,8 @@ if [ -z "${RCFILE+x}" ]; then
   fi
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-arena-rosnav/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
@@ -179,6 +181,12 @@ if [[ -f "$ros_sources_list" ]]; then
   echo "$ros_sources_list"
 else
   sudo rosdep init
+fi
+
+# Add local rosdep overrides for keys not in upstream (e.g., ament_python)
+ROSDEP_LOCAL_SOURCE=/etc/ros/rosdep/sources.list.d/99-arena.list
+if [ ! -f "${ROSDEP_LOCAL_SOURCE}" ]; then
+  echo "yaml file://${SCRIPT_DIR}/rosdep-arena.yaml" | sudo tee "${ROSDEP_LOCAL_SOURCE}" >/dev/null
 fi
 
 rosdep update --rosdistro "${ARENA_ROS_DISTRO}"
