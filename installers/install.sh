@@ -16,12 +16,27 @@ fi
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-arena-rosnav/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
+export ARENA_NON_INTERACTIVE=${ARENA_NON_INTERACTIVE:-0}
+
+prompt_with_default(){
+  local prompt="$1"
+  local default_value="$2"
+  local response
+
+  if [ "${ARENA_NON_INTERACTIVE}" = "1" ]; then
+    echo "${default_value}"
+    return
+  fi
+
+  read -rp "${prompt}" response
+  echo "${response:-${default_value}}"
+}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
 ARENA_WS_DIR=${ARENA_WS_DIR:-~/arena4_ws}
-read -rp "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
+INPUT=$(prompt_with_default "arena-rosnav workspace directory [${ARENA_WS_DIR}] " "${ARENA_WS_DIR}")
 ARENA_WS_DIR=$(realpath "$(eval echo "${INPUT:-${ARENA_WS_DIR}}")")
 export ARENA_WS_DIR
 
@@ -38,8 +53,7 @@ files=$( (grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
 if [ -n "$files" ]; then
     echo "The following files can cause some problems to installer:"
     echo "$files"
-    read -rp "Do you want to delete these files? (Y/n) [Y]: " choice
-    choice=${choice:-Y}
+    choice=$(prompt_with_default "Do you want to delete these files? (Y/n) [Y]: " "Y")
 
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
         sudo rm -f $files
@@ -86,6 +100,14 @@ fi
 sudo add-apt-repository universe -y
 sudo apt-get update || echo 0
 sudo apt-get install -y curl
+
+# Gazebo (Ignition/Fortress) repo for simulation deps (irobot/turtlebot, nav2 map server plugins)
+if [ ! -f /etc/apt/sources.list.d/gazebo-stable.list ] ; then
+  echo "Adding OSRF Gazebo apt repository..."
+  sudo wget -qO /usr/share/keyrings/gazebo-archive-keyring.gpg https://packages.osrfoundation.org/gazebo.key
+  echo "deb [signed-by=/usr/share/keyrings/gazebo-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list >/dev/null
+fi
+sudo apt-get update || echo 0
 
 echo "Installing tzdata...:"
 export DEBIAN_FRONTEND=noninteractive
@@ -184,7 +206,7 @@ if [ ! -f src/ros2/compiled ] ; then
     --ignore-src \
     --rosdistro "${ARENA_ROS_DISTRO}" \
     -y \
-    || echo 'rosdep failed to install all dependencies'
+    || { echo 'rosdep failed to install all dependencies'; exit 1; }
 
   # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
   pushd src/ros2/ros2/rosidl
@@ -222,7 +244,7 @@ rosdep install -y \
   --from-paths src \
   --ignore-src \
   --rosdistro "$ARENA_ROS_DISTRO" \
-  || echo 'rosdep failed to install all dependencies'
+  || { echo 'rosdep failed to install all dependencies'; exit 1; }
 . poetry_install
 touch "$INSTALLED"
 
@@ -256,8 +278,7 @@ do
   if grep -q "$name" "$INSTALLED" ; then
     echo "$name already installed"
   else
-    read -rp "Do you want to install ${name}? [N] " choice
-    choice="${choice:-N}"
+    choice=$(prompt_with_default "Do you want to install ${name}? [N] " "N")
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         . "src/arena/arena-rosnav/installers/$installer"
         compile
