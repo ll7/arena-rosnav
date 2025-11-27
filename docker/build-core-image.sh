@@ -59,7 +59,7 @@ export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
 BASE_BUILD_ARGS=(
   docker build
-  --progress=plain
+  --progress=auto
   --target base
   --build-arg "ARENA_ROS_VERSION=${ARENA_ROS_VERSION}"
   --build-arg "ARENA_BRANCH=${ARENA_BRANCH}"
@@ -70,7 +70,7 @@ BASE_BUILD_ARGS=(
 
 RUNTIME_BUILD_ARGS=(
   docker build
-  --progress=plain
+  --progress=auto
   --build-arg "BASE_IMAGE=${ARENA_BASE_IMAGE}"
   --build-arg "ARENA_ROS_VERSION=${ARENA_ROS_VERSION}"
   --build-arg "ARENA_BRANCH=${ARENA_BRANCH}"
