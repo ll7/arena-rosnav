@@ -1,0 +1,3 @@
+ament_python:
+  ubuntu: [python3-ament-package]
+  debian: [python3-ament-package]
