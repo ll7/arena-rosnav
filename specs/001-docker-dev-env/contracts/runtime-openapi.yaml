@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Arena Container Workflow API (Conceptual)
+  version: 0.1.0
+  description: |
+    Conceptual contract that tooling (CLI scripts or future services) could implement
+    to orchestrate the GPU-enabled Arena container workflows defined in this feature.
+servers:
+  - url: http://localhost:8080
+    description: Placeholder server for automation hooks
+paths:
+  /compose/build-run:
+    post:
+      summary: Build the Arena runtime image and launch the compose stack
+      tags: [compose]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profiles:
+                  type: array
+                  items:
+                    type: string
+                  description: Compose profiles to enable (e.g., gazebo, isaac)
+                seedConfigPath:
+                  type: string
+                  description: Path to deterministic seed configuration mounted inside container
+                forceRebuild:
+                  type: boolean
+                  default: false
+                  description: Whether to rebuild image ignoring cache
+              required: [profiles]
+      responses:
+        '202':
+          description: Compose stack launching
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                    description: Identifier for subsequent KPI queries
+                  gpuDetected:
+                    type: boolean
+                    description: True when NVIDIA runtime available inside container
+        '409':
+          description: Compose operation rejected due to unmet prerequisites (e.g., no GPU runtime)
+  /tests/kpi:
+    post:
+      summary: Execute safety KPI smoke tests inside the Arena container
+      tags: [validation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                runId:
+                  type: string
+                benchmarks:
+                  type: array
+                  items:
+                    type: string
+                  description: Benchmark suite identifiers under configs/benchmark
+              required: [runId, benchmarks]
+      responses:
+        '200':
+          description: KPI results collected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collisionRate:
+                    type: number
+                    format: float
+                  minDistance:
+                    type: number
+                    format: float
+                  logPath:
+                    type: string
+                    description: Host path containing raw logs
+        '424':
+          description: KPI run failed (e.g., benchmark mismatch, ROS launch error)
+  /devcontainer/status:
+    get:
+      summary: Check readiness of VS Code devcontainer integration
+      tags: [devcontainer]
+      parameters:
+        - in: query
+          name: service
+          schema:
+            type: string
+          description: Compose service name to verify (defaults to core)
+      responses:
+        '200':
+          description: Devcontainer ready for attachment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                  gpuAvailable:
+                    type: boolean
+                  notes:
+                    type: string
+        '503':
+          description: Devcontainer service unavailable or missing GPU access
