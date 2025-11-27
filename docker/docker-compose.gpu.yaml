@@ -1,0 +1,63 @@
+version: "3.9"
+
+x-core-service: &core-service
+  image: ${ARENA_IMAGE:-arena-rosnav/core:dev}
+  runtime: nvidia
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - capabilities: ["gpu"]
+  environment:
+    NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+    NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,graphics}
+    ARENA_ROS_DISTRO: ${ARENA_ROS_DISTRO:-humble}
+    ARENA_WS_DIR: /arena4_ws
+    COLCON_HOME: /arena4_ws
+    ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-1}
+  volumes:
+    - ../:/workspace:cached
+    - ../.arena-runtime/install:/arena4_ws/install
+    - ../.arena-runtime/log:/arena4_ws/log
+    - ../.arena-runtime/cache/pip:/root/.cache/pip
+  working_dir: /workspace
+  shm_size: "2gb"
+  healthcheck:
+    test: ["CMD-SHELL", "nvidia-smi >/dev/null 2>&1"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 60s
+
+services:
+  core:
+    <<: *core-service
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: core
+      args:
+        ARENA_BASE_IMAGE: ${ARENA_BASE_IMAGE:-base}
+        ARENA_ROS_VERSION: ${ARENA_ROS_VERSION:-humble}
+        ARENA_BRANCH: ${ARENA_BRANCH:-humble}
+    container_name: arena-core
+    command: bash -lc "source tools/source.bash && tail -f /dev/null"
+    profiles: ["default"]
+
+  gazebo:
+    <<: *core-service
+    container_name: arena-gazebo
+    command: bash -lc "source tools/source.bash && ros2 launch arena_bringup/launch/simulator/sim.launch.py simulator:=gazebo"
+    profiles: ["gazebo"]
+
+  isaac:
+    <<: *core-service
+    container_name: arena-isaac
+    command: bash -lc "source tools/source.bash && ros2 launch arena_bringup/launch/simulator/sim.launch.py simulator:=isaac"
+    profiles: ["isaac"]
+
+  training:
+    <<: *core-service
+    container_name: arena-training
+    command: bash -lc "source tools/source.bash && poetry run python training/scripts/train_agent.py --config default"
+    profiles: ["training"]
