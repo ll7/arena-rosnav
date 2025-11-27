@@ -1,3 +1,4 @@
+ARENA_NON_INTERACTIVE=${ARENA_NON_INTERACTIVE:-0}
 #!/bin/bash -i
 
 sudo apt install libfuse2
@@ -16,7 +17,11 @@ source "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate"
 until which nvidia-smi &> /dev/null; do
     echo "Warning: nvidia-smi command not found. Please install nvidia driver using"
     echo "sudo apt-get install nvidia-open"
-    read -rp "Confirm installation by pressing [Enter]" 
+    if [ "${ARENA_NON_INTERACTIVE}" = "1" ]; then
+        echo "ARENA_NON_INTERACTIVE=1 - skipping wait for confirmation"
+        break
+    fi
+    read -rp "Confirm installation by pressing [Enter]"
 done
 echo "Successfully detected NVIDIA driver installation"
 
