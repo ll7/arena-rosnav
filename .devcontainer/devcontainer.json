@@ -1,7 +1,8 @@
 {
   "name": "Arena ROSNav GPU Dev",
   "dockerComposeFile": [
-    "../docker/docker-compose.gpu.yaml"
+    "../docker/docker-compose.gpu.yaml",
+    "../docker/docker-compose.gpu.nobuild.yaml"
   ],
   "service": "core",
   "runServices": [

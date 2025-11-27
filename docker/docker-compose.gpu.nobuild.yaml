@@ -1,0 +1,7 @@
+version: "3.9"
+
+# Override to reuse a prebuilt image instead of rebuilding.
+services:
+  core:
+    build: null
+    image: ${ARENA_IMAGE:-arena-rosnav/core:dev}
