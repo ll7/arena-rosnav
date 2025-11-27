@@ -45,6 +45,8 @@ build/
 # python
 __pycache__/
 *.py[cod]
+.venv/
+*.egg-info/
 
 #vscode
 .vscode/
