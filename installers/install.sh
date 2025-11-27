@@ -22,6 +22,14 @@ export ARENA_NON_INTERACTIVE=${ARENA_NON_INTERACTIVE:-0}
 export ARENA_USE_LOCAL_REPO=${ARENA_USE_LOCAL_REPO:-0}
 export ARENA_FORCE_CLONE=${ARENA_FORCE_CLONE:-0}
 
+sanitize_repos_file() {
+  local file="$1"
+  if [ -f "$file" ] && grep -qE 'version: .*@[0-9a-f]{7,40}' "$file"; then
+    # Drop the "branch@" prefix and keep the pinned commit SHA (branch@<sha> -> <sha>)
+    sed -E -i 's/(version:[[:space:]]*)[^[:space:]]+@([0-9a-f]{7,40})/\\1\\2/' "$file"
+  fi
+}
+
 prompt_with_default(){
   local prompt="$1"
   local default_value="$2"
@@ -253,6 +261,16 @@ if [ ! -f "$INSTALLED" ] ; then
   ln -fs src/arena/arena-rosnav/tools/colcon_build .
 
   . poetry_install
+
+  # Fix upstream .repos files that pin commits as branch@sha (invalid for vcs) before import
+  for repo_file in \
+    "${ARENA_WS_DIR}/src/arena/arena-rosnav/.repos/arena.repos" \
+    "${ARENA_WS_DIR}/src/arena/arena-rosnav/.repos/isaac.repos" \
+    "${ARENA_WS_DIR}/src/arena/arena-rosnav/.repos/gazebo.repos" \
+    "${ARENA_WS_DIR}/src/arena/arena-rosnav/.repos/planners.repos"
+  do
+    sanitize_repos_file "$repo_file"
+  done
 fi
 
 vcs import src < src/arena/arena-rosnav/.repos/arena.repos
