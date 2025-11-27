@@ -1,3 +1,6 @@
 ament_python:
   ubuntu: [python3-ament-package]
   debian: [python3-ament-package]
+"${PROJECT_NAME}_msgs":
+  ubuntu: []
+  debian: []
