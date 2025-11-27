@@ -26,7 +26,14 @@ sanitize_repos_file() {
   local file="$1"
   if [ -f "$file" ] && grep -qE 'version: .*@[0-9a-f]{7,40}' "$file"; then
     # Drop the "branch@" prefix and keep the pinned commit SHA (branch@<sha> -> <sha>)
-    sed -E -i 's/(version:[[:space:]]*)[^[:space:]]+@([0-9a-f]{7,40})/\\1\\2/' "$file"
+    python3 - "$file" <<'PY'
+import re, sys, pathlib
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+new = re.sub(r"(version:\s*)[^@\s]+@([0-9a-f]{7,40})", r"\1\2", text)
+if new != text:
+    path.write_text(new, encoding="utf-8")
+PY
   fi
 }
 
