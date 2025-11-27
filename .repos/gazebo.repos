@@ -2,7 +2,7 @@ repositories:
   gazebo/ros_gz:
     type: git
     url: https://github.com/voshch/ros_gz.git
-    version: humble@dcae6932
+    version: dcae6932
   gazebo/sdformat_urdf:
     type: git
     url: https://github.com/ros/sdformat_urdf.git
@@ -16,4 +16,4 @@ repositories:
   gazebo/hunav_gz_plugin:
     type: git
     url: https://github.com/Arena-Rosnav/hunav_gz_plugin
-    version: main@94926887
+    version: 94926887
