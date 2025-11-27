@@ -1,0 +1,32 @@
+{
+  "name": "Arena ROSNav GPU Dev",
+  "dockerComposeFile": [
+    "../docker/docker-compose.gpu.yaml"
+  ],
+  "service": "core",
+  "runServices": [
+    "core"
+  ],
+  "workspaceFolder": "/workspace",
+  "remoteUser": "root",
+  "initializeCommand": "mkdir -p .arena-runtime/install .arena-runtime/log .arena-runtime/cache/pip",
+  "containerEnv": {
+    "ARENA_ROS_DISTRO": "${localEnv:ARENA_ROS_DISTRO:-humble}",
+    "ARENA_WS_DIR": "/arena4_ws",
+    "COLCON_HOME": "/arena4_ws",
+    "NVIDIA_VISIBLE_DEVICES": "${localEnv:NVIDIA_VISIBLE_DEVICES:-all}",
+    "NVIDIA_DRIVER_CAPABILITIES": "compute,utility,graphics"
+  },
+  "updateRemoteUserUID": false,
+  "postStartCommand": "bash -lc 'nvidia-smi'",
+  "postCreateCommand": "bash -lc 'source tools/source.bash && tools/colcon_build --packages-skip gazebo_ros && poetry install --with ros'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-iot.vscode-ros",
+        "ms-python.python"
+      ]
+    }
+  }
+}
